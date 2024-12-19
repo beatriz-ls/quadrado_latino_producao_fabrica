@@ -1,0 +1,28 @@
+{
+    "id": "A5D794B0",
+    "path": null,
+    "project_path": null,
+    "type": "object_explorer",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1734570784728.0,
+    "source_on_save": false,
+    "relative_order": 6,
+    "properties": {
+        "id": "29aafcb3f09e4d9d952b990efc10276f",
+        "name": "desplot",
+        "title": "desplot",
+        "language": "R",
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 2019026606717362530,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1734570784728,
+    "read_only": false,
+    "read_only_alternatives": []
+}

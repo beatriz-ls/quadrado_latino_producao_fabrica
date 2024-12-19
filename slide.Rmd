@@ -1,0 +1,330 @@
+---
+title: "Estudos sobre População de Operadores e Métodos"
+author: "Alunos: Beatriz Lima e Lohã Barbosa"
+date: "18/12/2024"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Sumário
+
+- Delineamento em Quadrado Latino
+- Problema apresentado
+- Interação
+- Pressupostos do modelo
+- Implementação do modelo
+- Desafios
+- Conclusão
+
+##  Delineamento em Quadrado Latino | Modelo
+
+A fórmula para o modelo de Quadrado Latino pode ser escrita da seguinte forma:
+
+- Caso o modelo seja aditivo
+
+$$Y_{ijk} = \mu + \tau_i + \beta_j + \alpha_k + \epsilon_{ijk}$$
+
+##  Delineamento em Quadrado Latino | Modelo
+
+A fórmula para o modelo de Quadrado Latino pode ser escrita da seguinte forma:
+
+- Caso o modelo seja aditivo
+
+$$Y_{ijk} = \mu + \tau_i + \beta_j + \alpha_k + \epsilon_{ijk}$$
+
+- Em alguns Casos o modelo pode ser escrito como interativo
+
+$$\small Y_{ijk} = \mu + \tau_i + \beta_j + \alpha_k + (\tau_i \times \beta_j) + (\tau_i \times \alpha_k) + (\beta_j \times \alpha_k) + \epsilon_{ijk}$$
+
+##  Delineamento em Quadrado Latino | Parâmetros do modelo
+
+$$Y_{ijk} = \mu + \tau_i + \beta_j + \alpha_k + \epsilon_{ijk}$$
+
+-   $\mu$ = Média Geral;
+-   $\tau_i$ = Efeito i-ésimo Tratamento;
+-   $\beta_j$ = Efeito j-ésimo Bloco;
+-   $\alpha_k$ = Efeito k-ésimo Bloco;
+-   $\epsilon_{ijk}$ = Erro Aleatório.
+
+OBS: é imposto que i=j=k=2,...,n.
+
+##  Delineamento em Quadrado Latino | Problema apresentado
+
+Estudo se passa no final do outono de 2023, na qual uma equipe de pesquisadores na área de produtividade industrial nos Estados Unidos conduziu um estudo em uma fábrica localizada em Indiana. Objetivo era analisar a eficiência de diferentes operadores e métodos de produção ao longo de um período. Dessa forma, foi implementado um delineamento experimental em Quadrado Latino, na qual buscou-se minimizar as influências de fatores externos como a variabilidade diária, temporal ou diferenças entre os operadores.
+
+##  Delineamento em Quadrado Latino | Contexto
+
+A fábrica é conhecida por produzir componentes de precisão para máquinas agrícolas e empregava operadores treinados com experiência em diferentes medotodlogias de trabalho. O estudo focou em quatro operadores *(Operador 1, Operador 2, ... Operador 4)*, em quatro métodos distintos de produção, denominados como *A, B, C e D* e em *quatro momentos diferentes*.
+  
+A variável de ineteresse era a produção diária de cada operador *(em números de peças produzidas)*. Para garantir um ambiente controlado, a equipe de pesquisa organizou o experimento para garantir um ambiente controlado, a equipe de pesquisa organizou o experimento ao longo de quatro momentos ordenados consecutivos.
+
+##  Delineamento em Quadrado Latino | Planejamento experimental
+
+O quadrado latino foi escolhido com delineamento com:
+
+- Linhas: representando a ordem da aplicação ao longo do tempo (dias ou semanas);
+- Colunas: Representando os operadores (1 ao 4);
+- tratamentos: Métodos de produção (A, B, C e D).
+
+
+## Delineamento em Quadrado Latino | Planejamento experimental
+
+```{r cars, echo = F, message=F, warning=F}
+if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("lmtest")) install.packages("lmtest")
+if (!require("lsmeans")) install.packages("lsmeans")
+if (!require("multcomp")) install.packages("multcomp")
+if (!require("multcompView")) install.packages("multcompView")
+if (!require("knitr")) install.packages("knitr")
+library(desplot) # criação de gráficos
+library(RColorBrewer) # estética dos gráficos
+library(readxl)
+library(car)
+estudo <- read_excel("producao_fabrica.xlsx")
+tabela1 <- read_excel("tabela1.xlsx")
+estudo$Ordem <- as.factor(estudo$Ordem)
+estudo$Operador <- as.factor(estudo$Operador)
+estudo$Metodo <- as.factor(estudo$Metodo)
+estudo$Producao <- as.numeric(estudo$Producao)
+
+```
+
+## Delineamento em Quadrado Latino | Planejamento experimental
+
+```{r imagem}
+
+knitr::include_graphics("C:/Users/beatr/Documents/Estudos universidade/Estudos de Planejamento Experimental/quadrado_latino_adelmo/imgem.jpg")
+
+```
+
+## Delineamento em Quadrado Latino | Planejamento experimental
+
+```{r}
+library(knitr)
+kable(head(estudo, 5), caption = "Tabela 2: Cinco primeiras observações do banco de dados.")
+```
+
+## Delineamento em Quadrado Latino | Analise exploratória
+
+```{r desplot, warning=FALSE, message=FALSE}
+
+palette <- brewer.pal(9, "YlGnBu")
+
+desplot <- desplot(data = estudo,
+                   form = Producao ~ Operador * Ordem,
+                   text = Producao,
+                   cex = 1,
+                   strip.cex = 1,
+                   show.key = F,
+                   col.regions = palette,
+                   main = "O quadrado latino")
+
+print(desplot)
+```
+
+## Delineamento em Quadrado Latino | Analise exploratória
+
+```{r boxplot}
+
+palette_gen <- brewer.pal(4, "Dark2")
+
+boxplot <- ggplot(estudo, aes(x = Metodo, y = Producao, colour = Metodo, fill = Metodo)) +
+            geom_boxplot(alpha = 0.5) +
+            stat_boxplot(geom = "errorbar") +
+            geom_point() +
+            scale_colour_manual(values = palette_gen) +
+            scale_fill_manual(values = palette_gen) +
+            theme_classic() +
+            theme(legend.position = "none",
+                  strip.text = element_text(size = 12),
+                  strip.background = element_rect(fill = "grey90"),
+                  plot.title = element_text(face = "bold", size = 13, vjust = 2)) +
+            labs(x = "Método",
+                 y = "Produção",
+                 title = "Boxplot")
+
+boxplot
+```
+
+## Delineamento em Quadrado Latino | Analise exploratória
+
+Teste de normalidade
+
+```{r}
+shapiro.test(estudo$Producao)
+```
+
+## Delineamento em Quadrado Latino | Analise exploratória
+
+```{r, fig.width=5, fig.height=5}
+hist(estudo$Producao, main = "Produção")
+```
+
+## Delineamento em Quadrado Latino | Analise exploratória
+
+- Correlação
+
+```{r}
+estudo$Ordem <- as.numeric(estudo$Ordem)
+estudo$Operador <- as.numeric(estudo$Operador)
+estudo$Metodo <- as.numeric(estudo$Metodo)
+dados_corr <- estudo[, c("Producao", "Ordem", "Operador")]
+cor(dados_corr, method = "pearson")
+```
+
+## Delineamento em Quadrado Latino | Interação (Ordem x Método)
+
+```{r, echo = F, message=F, warning=F}
+estudo$Ordem <- as.factor(estudo$Ordem)
+estudo$Operador <- as.factor(estudo$Operador)
+estudo$Metodo <- as.factor(estudo$Metodo)
+estudo$Producao <- as.numeric(estudo$Producao)
+```
+
+
+
+```{r}
+# Gráfico de interação: Ordem x Método
+ggplot(estudo, aes(x = Ordem, y = Producao, color = Metodo, group = Metodo)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Interação: Ordem x Método",
+       x = "Ordem", y = "Produção") +
+  theme_minimal()
+```
+
+## Delineamento em Quadrado Latino | Interação (Operador x Método)
+
+```{r}
+# Gráfico de interação: Operador x Método
+ggplot(estudo, aes(x = Operador, y = Producao, color = Metodo, group = Metodo)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Grafico de Interação: Operador x Método",
+       x = "Operador", y = "Produção") +
+  theme_minimal()
+```
+
+## Delineamento em Quadrado Latino | Interação (comparação)
+
+```{r}
+# Modelo sem interação
+modelo_aditivo <- aov(Producao ~ Ordem+Operador+Metodo, data = estudo)
+
+# Modelo com interação (com interação entre os fatores)
+modelo_interacao <- aov(Producao ~ Ordem*Metodo, data = estudo)
+
+# Resumo do modelo com interação
+AIC(modelo_aditivo, modelo_interacao)
+BIC(modelo_aditivo, modelo_interacao)
+```
+
+Possíveis problemas de multicolinearidade, falta de variabilidade ou valores extremos de outliers.
+
+## Delineamento em Quadrado Latino | Interação (comparação)
+
+```{r}
+vif(modelo_interacao, type = "predictor")
+```
+
+Dificuldade no calculo de multicolinearidade devido a ausencia de variabilidade ou possívies probelmas nos dados. Geralmente quando o GVIF é 1, neste caso específico pode indicar que o número de variáveis no modelo é pequeno. Devido a complexidade de se trabalhar com o modelo interativo, a opção é o modelo aditivo.
+
+
+
+## Delineamento em Quadrado Latino | Pressupostos
+-   Os tratamentos são atribuídos aleatoriamente em linhas e colunas, mas de forma balanceada $\sum_{i=1}^{n} \tau_i = 0$ (soma dos efeitos dos tratamentos é zero).
+- Normalidade dos resíduos $\epsilon_{ijk} \sim N(0, \sigma^2)$
+- Homogeneidade das variancias nos resíduos $\text{Var}(\epsilon_{ijk}) = \sigma^2$ para todos os $i, j, k$
+
+## Delineamento em Quadrado Latino | Pressupostos
+
+- Normalidade dos resíduos
+
+```{r, echo = F, message=F, warning=F}
+modelo <- aov(Producao ~ Ordem+Operador+Metodo , data = estudo)
+```
+
+```{r, fig.width=5, fig.height=5}
+plot(modelo, 2)
+```
+
+## Delineamento em Quadrado Latino | Pressupostos
+
+- Normalidade dos resíduos
+
+```{r}
+shapiro.test(residuals(modelo_aditivo))
+```
+
+## Delineamento em Quadrado Latino | Pressupostos
+
+- Homogeneidade dos resíduos
+
+```{r, fig.width=5, fig.height=5}
+plot(modelo_aditivo, 1)
+```
+
+## Delineamento em Quadrado Latino | Pressupostos
+
+- Homogeneidade dos resíduos
+
+```{r}
+leveneTest(Producao ~ Ordem, data = estudo)
+leveneTest(Producao ~ Operador, data = estudo)
+leveneTest(Producao ~ Metodo, data = estudo)
+```
+
+## Delineamento em Quadrado Latino | Pressupostos
+
+- autocorrelação dos erros
+
+Teste de Durbin-Watson para o modelo
+
+```{r}
+dw_test <- dwtest(modelo_aditivo)
+print(dw_test)
+```
+
+DW próximo de 2 indica nenhuma autocorrelação. Os resíduos são independentes, o que é o ideal para a maioria dos modelos de regressão.
+
+## Delineamento em Quadrado Latino | Implementação do modelo
+
+```{r}
+summary(modelo_aditivo)
+```
+
+- Pode-se desconfiar que o operador ou o método gera uma diferença significativa.
+
+## Delineamento em Quadrado Latino | Implementação do modelo
+
+- Teste post-hoc de Tukey
+
+```{r}
+tukey <- TukeyHSD(modelo_aditivo, "Metodo")
+print(tukey)
+```
+
+## Delineamento em Quadrado Latino | Implementação do modelo
+
+- Gráfico do teste post-hoc de Tukey
+
+```{r, fig.width=5, fig.height=5}
+plot(tukey)
+```
+
+## Delineamento em Quadrado Latino | Desafios
+
+- Quantidade de variáveis podem ser insuficientes para modelos mais complexos;
+- Investigações mais aprofundadas em pesquisas de campo podem resolver problemas futuros, como variáves específicas para interação;
+
+## Delineamento em Quadrado Latino | Conclusões
+
+- Tanto os Operadores quanto os Métodos apresentaram efeitos significativos sobre a produção.
+- O método C foi consistentemente mais eficiente do que os métodos A e B, enquanto o método D também foi mais eficiente que A, mas não apresentou diferença significativa em relação ao método C.
+- Recomenda-se adotar o método C ou D porque apresentaram uma amior eficiência produtiva. Além disso, seria interessante investigar por que os operadores tiveram diferenças significativas para implementar melhorias no treinamento ou na padronização das práticas.
+
+
+
